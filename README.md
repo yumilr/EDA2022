@@ -2,4 +2,4 @@
 
 RbTree: Delete pendiente!
 
-B+Tree: Terminar!! ;'C
+B+Tree: , presentar. Terminar y corregir!! 
