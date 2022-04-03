@@ -2,4 +2,4 @@
 
 RbTree: Delete pendiente!
 
-B+Tree: pendiente!
+B+Tree: Terminar!! ;'C
