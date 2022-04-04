@@ -1,8 +1,7 @@
 #include "BplusTree.h"
 
 int main() {
-
-    
+    // /*
     // Read file
     std::ifstream texto;
     texto.open("./output.txt");
@@ -31,23 +30,26 @@ int main() {
         tiempoInseccion += tiempo;
         delete tree;
     }
+    // */
     /*
-    auto tree = new BplusTree();
-    tree->insertar(1);
-    tree->insertar(4);
-    tree->insertar(7);
-    tree->insertar(10);
-    tree->insertar(17);
-    tree->insertar(21);
-    tree->insertar(31);
-    tree->insertar(25);
-    tree->insertar(19);
-    tree->insertar(20);
-    tree->insertar(28);
-    tree->insertar(42);
+    auto tree = BplusTree();
+    tree.insertar(1);
+    tree.insertar(4);
+    tree.insertar(7);
+    tree.insertar(10);
+    tree.insertar(17);
+    tree.insertar(21);
+    tree.insertar(31);
+    tree.insertar(25);
+    tree.insertar(19);
+    tree.insertar(20);
+    tree.insertar(28);
+    tree.insertar(42);
+    // tree.print();
+    /*
+    vector<int> e = tree.bfs();
+    for(auto x:e)
+        cout << x << ", ";
+    cout << endl;
     */
-
-
-
-
 }

@@ -1,8 +1,7 @@
 #include "BplusTree.h"
 
 Nodo::Nodo(){
-    this->key = new int[MAX];
-    this->ptr = new Nodo *[MAX + 1];
+    esHoja = false;
 }
 
 BplusTree::BplusTree(){
@@ -10,221 +9,230 @@ BplusTree::BplusTree(){
 }
 
 BplusTree::~BplusTree(){
-    // BORRADO DE NODOS:
+    if (root = nullptr)
+        return;
+    else
+        clear(root);
+}
+
+void BplusTree::clear(Nodo* nodo){
+    if (nodo)
+    {
+        for(auto x: nodo->hijos) clear(x);
+        delete nodo;
+    }
 }
 
 void BplusTree::insertar(int val){
-
-    // Caso 0: Root is null, 
-    // retornamos el nodo creado.
-    if(root == nullptr){
+    // Caso 0: Root es null, 
+    if(root == nullptr)
+    {
+        
         root = new Nodo;
-        root->key[0] = val;
-        root->hoja = true;
-        root->size = 1;
+        root->keys.push_back(val);
+        root->esHoja = true;
     } 
-    else { // Recorremos el arbol
+    else 
+    {   // Recorremos el arbol buscando el nodo al que corresponde
+        // el valor a ingresar
         Nodo *curr = root;
         Nodo *padre;
 
-        // Mientras curr no sea hoja
-        while(curr->hoja == false){
+        while(!curr->esHoja){
             padre = curr;
-
-            for (int i = 0; i < curr->size; i++){
-                // Encontramos la posicion que
-                // le corresponde al nodo
-                if(val < curr->key[i]){
-                    curr = curr->ptr[i];
+            for (int i = 0; i < curr->keys.size(); i++)
+            {
+                // Encontrar posición
+                if(val < curr->keys[i]){
+                    curr = curr->hijos[i];
                     break;
                 }
-
-                // Si llega al final
-                if(i < curr->size - 1){
-                    curr = curr->ptr[i+1];
+                // Se llega al final
+                if(i < curr->keys.size() - 1){
+                    curr = curr->hijos[i+1];
                     break;
                 }
                 
             }
         }
 
-        if (curr->size < MAX){
+        // CASO 1: No hay overflow
+        if(curr->keys.size()<ind-1)
+        {
             int i = 0;
-            while (val > curr->key[i] && i < curr->size)
+            while (val > curr->keys[i] && i < curr->keys.size())
                 i++;
-            for (int j = curr->size; j < i; j--)
-                curr->key[j] = curr->key[j - 1];
-            curr->key[i] = val;
-            curr->size++;
-
-            curr->ptr[curr->size] = curr->ptr[curr->size - 1];
-            curr->ptr[curr->size - 1] = nullptr;
+            curr->keys.insert(curr->keys.begin() + i, val);
         } 
-        else{
+        else 
+        {
+            // CASO 2: Hay overflow, toca split
 
-            // Creamos un nuevo nodo hoja
-            Nodo *hoja_ = new Nodo;
-            int nodoVirtual[MAX + 1];
+            // creamos un nuevo nodo hoja
+            Nodo *nLeaf = new Nodo;
+            nLeaf->esHoja = true;
 
-            // Actualizar el curr al nodo creado
-            for (int i = 0; i < MAX; i++)
-                nodoVirtual[i] = curr->key[i];
-            int i = 0, j;
+            curr->split(nLeaf,val);
 
-            // Actualizar el nodoVirtual 
-            // al anterior
-            for (int j = MAX; j> i; j--)
-                nodoVirtual[j] = nodoVirtual[j - 1];
-
-            nodoVirtual[i] = val;
-            hoja_->hoja = true;
-
-            curr->size = (MAX + 1) / 2;
-            hoja_->size = MAX + 1 - (MAX + 1) / 2;
-
-            curr->ptr[curr->size] = hoja_;
-            hoja_->ptr[curr->size] = curr->ptr[MAX];
-
-            curr->ptr[MAX] = nullptr;
-
-            // Actualizar la key del nodoVirtual
-            // al anterior
-            for (i = 0; i < curr->size; i++)
-                curr->key[i] = nodoVirtual[i];
-            
-            // Actualizar la key de hoja_
-            // al nodoVirtual
-            for (i = 0, j = curr->size; i < hoja_->size; i++, j++)
-                hoja_->key[i] = nodoVirtual[i];
-
-            // curr es root
-            if(curr == root){
-                // Crear otro nodo
-                Nodo *root_ = new Nodo;
-
-                root_->key[0] = hoja_->key[0];
-                root_->ptr[0] = curr;
-                root_->ptr[1] = hoja_;
-                root_->hoja = false;
-                root_->size = 1;
-                root = root_;
-            } 
-            else{
-                // pipipipi :''
-                insertInternal(hoja_->key[0], padre, hoja_);
+            if (curr == root) 
+            {
+                Nodo* nParent = new Nodo();
+                nParent->keys.push_back(nLeaf->keys[0]);
+                nParent->hijos.push_back(curr);
+                nParent->hijos.push_back(nLeaf);
+                root = nParent;
             }
+            else 
+            {
+                insertInternal(nLeaf->keys[0], padre, nLeaf);
+            } 
         }
     }
+  
 }
 
 void BplusTree::insertInternal(int val, Nodo* curr, Nodo* child){
-    
-    // No hay overflow
-    if(curr->size < MAX){
+    if(curr->keys.size() < ind){
         int i = 0;
-
-        while (val>curr->key[i]&&i<curr->size)
+        while (val > curr->keys[i] && i < curr->keys.size())
             i++;
+        for (int j = curr->keys.size(); j > i; j--) {
+            curr->keys[j] = curr->keys[j - 1];
+        }
+ 
+        for (int j = curr->keys.size() + 1; j > i + 1; j--) {
+            curr->hijos[j] = curr->hijos[j - 1];
+        }
 
-        for (int j = curr->size; j > i; j--)
-            curr->key[j] = curr->key[j - 1];
-
-        curr->key[i] = val;
-        curr->size++;
-        curr->ptr[i + 1] = child;
+        curr->keys.push_back(val);
+        curr->hijos.push_back(child);
     }
-    // Para el overflow
-    else {
-        Nodo *internal = new Nodo;
-        int virtualKey[MAX + 1];
-        Nodo *virtualPtr[MAX + 2];
-
-        for (int i = 0; i < MAX; i++)
-            virtualKey[i] = curr->key[i];
-
-        for (int i = 0; i < MAX + 1; i++)
-            virtualPtr[i] = curr->ptr[i];
-
+    else 
+    {
+        Nodo* nIntern = new Nodo;
+        vector<int> tempK[ind + 1];
+        vector<Nodo*> tempN[ind + 2];
+ 
+        for (int i = 0; i < ind; i++) {
+            tempK->push_back(curr->keys[i]);
+        }
+ 
+        for (int i = 0; i < ind + 1; i++) {
+            tempN->push_back(curr->hijos[i]);
+        }
+ 
         int i = 0, j;
+        while (val > tempK->at(i) && i < ind) i++;
 
-        while(val>virtualKey[i]&&i<MAX)
-            i++;
-
-        for (int j = MAX + 1; j > i; j--)
-            virtualKey[j] = virtualKey[j - 1];
-
-        virtualKey[i] = val;
-
-        for (int j = MAX+2; j < i; j--)
-            virtualPtr[j] = virtualPtr[j - 1];
-
-        virtualPtr[i + 1] = child;
-        internal->hoja = false;
-
-        curr->size = (MAX + 1) / 2;
-        internal->size = MAX - (MAX + 1) / 2;
-
-        for (i = 0, j = curr->size + 1; i < internal->size; i++, j++)
-            internal->key[i] = virtualKey[j];
-    
+        for (int j = ind + 1; j > i; j--) {
+            tempK[j]= tempK[j - 1];
+        }
  
-        for (i = 0, j = curr->size + 1; i < internal->size + 1; i++, j++)
-            internal->ptr[i] = virtualPtr[j];
-
+        tempK->at(i) = val;
+ 
+        for (int j = ind+2; j > i+1; j--) {
+            tempN[j] = tempN[j - 1];
+        }
+ 
+        tempN->at(i + 1) = child;
+        nIntern->esHoja = false;
+ 
+        for (i=0,j=curr->keys.size()+1; i<nIntern->keys.size(); i++,j++) 
+        {
+            nIntern->keys.at(i) = tempK->at(j);
+        }
+ 
+        for (i=0,j=curr->hijos.size()+1; i<nIntern->hijos.size()+1; i++,j++)
+        {
+            nIntern->hijos.at(i) = tempN->at(j);
+        }
+ 
         if (curr == root) {
+            Nodo* nRoot = new Nodo;
+            nRoot->keys[0] = curr->keys[curr->keys.size()];
  
-            Nodo* newRoot = new Nodo;
- 
-            newRoot->key[0] = curr->key[curr->size];
- 
-            newRoot->ptr[0] = curr;
-            newRoot->ptr[1] = internal;
-            newRoot->hoja = false;
-            newRoot->size = 1;
-            root = newRoot;
+            nRoot->hijos[0] = curr;
+            nRoot->hijos[1] = nIntern;
+            nRoot->esHoja = false;
+            root = nRoot;
         }
-        else{
-            insertInternal(curr->key[curr->size], findParent(root,curr), internal);
+ 
+        else {
+            insertInternal(curr->keys[curr->keys.size()],findParent(root,curr), nIntern);
         }
-    
     }
 }
 
 Nodo* BplusTree::findParent(Nodo* curr, Nodo* child){
-    Nodo* padre;
+    Nodo* parent;
  
-    // If cursor reaches the end of Tree
-    if (curr->hoja || (curr->ptr[0])->hoja) 
+    if (curr->esHoja || (curr->hijos[0])->esHoja) {
         return nullptr;
-    
+    }
+
+    for (int i = 0;
+         i < curr->keys.size() + 1; i++) {
  
-    // Traverse the current node with
-    // all its child
-    for (int i = 0; i < curr->size + 1; i++) {
- 
-        // Update the parent for the
-        // child Node
-        if (curr->ptr[i] == child) {
-            padre = curr;
-            return padre;
+        if (curr->hijos[i] == child) {
+            parent = curr;
+            return parent;
         }
- 
-        // Else recursively traverse to
-        // find child node
         else {
-            padre = findParent(curr->ptr[i],child);
- 
-            // If parent is found, then
-            // return that parent node
-            if (padre != NULL)
-                return padre;
+            parent = findParent(curr->hijos[i], child);
+            if (parent != nullptr)
+                return parent;
         }
     }
- 
-    // Return parent node
-    return padre;
+    return parent;
 }
 
-void BplusTree::borrar(int val){}
+void Nodo::split(Nodo* newLeaf, int val){
+    std::vector<int> temp = keys;
+    int i = 0;
+    while (temp[i] < val && i < temp.size())
+        i++;
+    temp.insert(temp.begin()+i, val);
 
-void BplusTree::bfs(){}
+    keys.clear();
+
+    for (int i = 0; i < floor(ind/2); i++) 
+        keys.push_back(temp[i]);
+
+    for (int i = floor(ind/2); i < temp.size(); i++) 
+        keys.push_back(temp[i]);
+}
+
+void BplusTree::borrar(int val){
+
+}
+
+vector<int> BplusTree::bfs(){
+    std::vector<int> result;
+        if(root == nullptr) return result;
+        queue<Nodo*> q;
+        q.push(root);
+        while(!q.empty()){
+            const Nodo* curr = q.front();
+            if (!curr->esHoja) {
+                for(int i = 0; i< curr->keys.size()+1; ++i){
+                    if(curr->hijos[i] != nullptr){
+                        q.push(curr->hijos[i]);
+                    } 
+                }
+            }
+            for(int i = 0; i<curr->keys.size(); ++i){
+                result.push_back(curr->keys[i]);
+            }
+            q.pop();
+        }
+        return result;
+}
+
+void BplusTree::print(){
+    if (root == nullptr)
+        return;
+    else
+        for(auto x: root->keys)
+            cout << x << " - ";
+        cout << endl;
+}

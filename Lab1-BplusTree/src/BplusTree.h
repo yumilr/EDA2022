@@ -1,7 +1,6 @@
 #include "libs.h"
 
-#define MAX (10>>17)
-#define ind 20
+
 
 // Ahí van a encontrar los datos (0-999999)
 // La cantidad de indices por nodo es 20
@@ -14,9 +13,12 @@
 struct Nodo{
     // Constructor
     Nodo();
-    bool hoja;
-    int *key, size;
-    Nodo **ptr;
+    bool esHoja;
+
+    void split(Nodo *,int);
+
+    vector<int> keys;
+    vector<Nodo*> hijos;
 };
 
 class BplusTree
@@ -27,18 +29,17 @@ public:
     BplusTree();
     void insertar(int);
     void borrar(int);
-    // extraído 
-    void insertInternal(int, Nodo*, Nodo*);
+
+    void insertInternal(int, Nodo *, Nodo *);
     Nodo *findParent(Nodo *, Nodo *);
-    //
-    void bfs();
+
+    vector<int> bfs();
 
     ~BplusTree();
+
+    void clear(Nodo*);
+    void print();
+    void print2(Nodo*);
 };
-
-
-
-
-
 
 #endif
